@@ -9,7 +9,7 @@ class Matrix {
 
 protected:
 	
-	std::vector<std::vector<int>> matrixRows;
+	std::vector<std::vector<_int64>> matrixRows;
 	//std::unique_ptr<std::unique_ptr<std::array<int, 3>>> matrixRows;
 	int numberOfRows;
 	int numberOfColumns;
@@ -20,8 +20,9 @@ public:
 
 	Matrix(int rows, int columns);
 
-	int getElementAt(int row, int column);
+	_int64 getElementAt(int row, int column);
 
+	void showMatrix();
 };
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
