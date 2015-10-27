@@ -4,13 +4,14 @@
 #include <memory>
 #include <vector>
 
+typedef std::unique_ptr<_int64[]> matrixRow;
+
 //Base class to hold a matrix with accessor method for elements
 class Matrix {
 
 protected:
 	
-	std::vector<std::vector<_int64>> matrixRows;
-	//std::unique_ptr<std::unique_ptr<std::array<int, 3>>> matrixRows;
+	std::unique_ptr<matrixRow[]> matrixRows;
 	int numberOfRows;
 	int numberOfColumns;
 

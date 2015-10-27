@@ -4,6 +4,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <tbb\blocked_range.h>
+#include <tbb\parallel_for.h>
+
 //Define matrix base class constructor
 Matrix::Matrix(int rows, int columns) {
 
@@ -13,8 +16,10 @@ Matrix::Matrix(int rows, int columns) {
 
 	this->numberOfRows = rows;
 	this->numberOfColumns = columns;
-	std::vector<std::vector<_int64>> matrixRows(rows, std::vector<_int64>(columns));
-
+	this->matrixRows = std::unique_ptr<matrixRow[]>(new matrixRow[rows]);
+	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
+		this->matrixRows[rowCounter] = matrixRow(new _int64[columns]);
+	}
 }
 
 //Element accessor
@@ -24,7 +29,7 @@ _int64 Matrix::getElementAt(int row, int column) {
 		throw std::invalid_argument("Row or column is outside valid range");
 	}
 
-	return this->matrixRows.at(row).at(column);
+	return this->matrixRows[row][column];
 
 }
 
@@ -42,7 +47,7 @@ void Matrix::showMatrix() {
 			else {
 				std::cout << ", ";
 			}
-			std::cout << this->getElementAt(rowCounter, columnCounter);
+			std::cout << getElementAt(rowCounter, columnCounter);
 		}
 		std::cout << "]" << std::endl;
 	}
@@ -59,12 +64,10 @@ void SerialMatrix::initializeMatrix() {
 
 	_int64 seedValue = 1;
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
-		std::vector<_int64> currentRow;
 		for (int columnCounter = 0; columnCounter < this->numberOfColumns; ++columnCounter) {
 			seedValue = getNextRandomNumber(seedValue);
-			currentRow.push_back(seedValue);
+			this->matrixRows[rowCounter][columnCounter] = seedValue;
 		}
-		matrixRows.push_back(currentRow);
 	}
 
 }
@@ -76,5 +79,14 @@ ParallelMatrix::ParallelMatrix(int rows, int columns) : Matrix(rows, columns) {
 
 //Initialize matrix elements in parallel
 void ParallelMatrix::initializeMatrix() {
+
+
+
+
+
+
+
+
+
 
 }
