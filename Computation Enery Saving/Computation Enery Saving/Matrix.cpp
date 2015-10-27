@@ -81,6 +81,14 @@ ParallelMatrix::ParallelMatrix(int rows, int columns) : Matrix(rows, columns) {
 void ParallelMatrix::initializeMatrix() {
 
 
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
+		[=](tbb::blocked_range<int> range) {
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomNumber(indexCounter);
+		}
+	}
+	);
 
 
 
