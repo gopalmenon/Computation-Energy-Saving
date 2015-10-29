@@ -1,6 +1,7 @@
 #ifndef RANDOM_NUMBER_H
 #define RANDOM_NUMBER_H
 
+#include <chrono>
 #include <cmath>
 
 //Constants
@@ -10,5 +11,8 @@ const auto INCREMENT = 1013904223;
 
 //Next randowm number generator based on linear congruential generator
 _int64 getNextRandomNumber(_int64 currentNumber);
+
+//Next randowm boolean generator 
+bool getNextRandomBoolean();
 
 #endif

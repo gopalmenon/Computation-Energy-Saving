@@ -1,14 +1,12 @@
-#include "Matrix.hpp"
+#include "BooleanMatrix.hpp"
 #include "RandomNumber.hpp"
 
+#include <ctime>
 #include <iostream>
 #include <stdexcept>
 
-#include <tbb\blocked_range.h>
-#include <tbb\parallel_for.h>
-
 //Define matrix base class constructor
-Matrix::Matrix(int rows, int columns) {
+BooleanMatrix::BooleanMatrix(int rows, int columns) {
 
 	if (rows <= 0 || columns <= 0) {
 		throw std::invalid_argument("Rows and columns must be non-zero and positive");
@@ -16,14 +14,14 @@ Matrix::Matrix(int rows, int columns) {
 
 	this->numberOfRows = rows;
 	this->numberOfColumns = columns;
-	this->matrixRows = std::unique_ptr<matrixRow[]>(new matrixRow[rows]);
+	this->matrixRows = std::unique_ptr<matrixBooleanRow[]>(new matrixBooleanRow[rows]);
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
-		this->matrixRows[rowCounter] = matrixRow(new _int64[columns]);
+		this->matrixRows[rowCounter] = matrixBooleanRow(new bool[columns]);
 	}
 }
 
 //Element accessor
-_int64 Matrix::getElementAt(int row, int column) {
+bool BooleanMatrix::getElementAt(int row, int column) {
 
 	if (row > this->numberOfRows - 1 || column > this->numberOfColumns - 1) {
 		throw std::invalid_argument("Row or column is outside valid range");
@@ -34,7 +32,7 @@ _int64 Matrix::getElementAt(int row, int column) {
 }
 
 //Matrix viewer
-void Matrix::showMatrix() {
+void BooleanMatrix::showMatrix() {
 
 	bool firstRowElement;
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
@@ -55,40 +53,31 @@ void Matrix::showMatrix() {
 }
 
 //Serial matrix constructor
-SerialMatrix::SerialMatrix(int rows, int columns) : Matrix(rows, columns) {
+SerialBooleanMatrix::SerialBooleanMatrix(int rows, int columns) : BooleanMatrix(rows, columns) {
 	initializeMatrix();
 }
 
 //Initialize matrix elements in order
-void SerialMatrix::initializeMatrix() {
+void SerialBooleanMatrix::initializeMatrix() {
 
-	_int64 seedValue = 1;
+	std::srand(std::time(0));
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
 		for (int columnCounter = 0; columnCounter < this->numberOfColumns; ++columnCounter) {
-			seedValue = getNextRandomNumber(seedValue);
-			this->matrixRows[rowCounter][columnCounter] = seedValue;
+			this->matrixRows[rowCounter][columnCounter] = getNextRandomBoolean();
 		}
 	}
 
 }
 
 //Parallel matrix constructor
-ParallelMatrix::ParallelMatrix(int rows, int columns) : Matrix(rows, columns) {
+ParallelBooleanMatrix::ParallelBooleanMatrix(int rows, int columns) : BooleanMatrix(rows, columns) {
 	initializeMatrix();
 }
 
 //Initialize matrix elements in parallel
-void ParallelMatrix::initializeMatrix() {
+void ParallelBooleanMatrix::initializeMatrix() {
 
 
-	tbb::parallel_for(
-		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
-		[=](tbb::blocked_range<int> range) {
-		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
-			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomNumber(indexCounter);
-		}
-	}
-	);
+
 
 }
-

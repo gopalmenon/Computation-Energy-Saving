@@ -1,17 +1,17 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef BOOLEAN_MATRIX_H
+#define BOOLEAN_MATRIX_H
 
 #include <memory>
 #include <vector>
 
-typedef std::unique_ptr<_int64[]> matrixRow;
+typedef std::unique_ptr<bool[]> matrixBooleanRow;
 
 //Base class to hold a matrix with accessor method for elements
-class Matrix {
+class BooleanMatrix {
 
 protected:
-	
-	std::unique_ptr<matrixRow[]> matrixRows;
+
+	std::unique_ptr<matrixBooleanRow[]> matrixRows;
 	int numberOfRows;
 	int numberOfColumns;
 
@@ -19,20 +19,20 @@ protected:
 
 public:
 
-	Matrix(int rows, int columns);
+	BooleanMatrix(int rows, int columns);
 
-	_int64 getElementAt(int row, int column);
+	bool getElementAt(int row, int column);
 
 	void showMatrix();
 };
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
 //The randon population is done serially.
-class SerialMatrix : public Matrix {
+class SerialBooleanMatrix : public BooleanMatrix {
 
 public:
 
-	SerialMatrix(int rows, int columns);
+	SerialBooleanMatrix(int rows, int columns);
 
 private:
 
@@ -42,11 +42,11 @@ private:
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
 //The randon population is done in parallel.
-class ParallelMatrix : public Matrix {
+class ParallelBooleanMatrix : public BooleanMatrix {
 
 public:
 
-	ParallelMatrix(int rows, int columns);
+	ParallelBooleanMatrix(int rows, int columns);
 
 private:
 
