@@ -80,7 +80,6 @@ ParallelMatrix::ParallelMatrix(int rows, int columns) : Matrix(rows, columns) {
 //Initialize matrix elements in parallel
 void ParallelMatrix::initializeMatrix() {
 
-
 	tbb::parallel_for(
 		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
 		[=](tbb::blocked_range<int> range) {
