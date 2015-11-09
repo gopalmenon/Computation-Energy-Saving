@@ -1,11 +1,15 @@
 #include "BooleanMatrix.hpp"
 #include "Matrix.hpp"
+#include "ParallelSort.hpp"
 #include "RandomNumber.hpp"
 #include "WeightedPoint.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+
+#include <tbb\blocked_range.h>
+#include <tbb\parallel_for.h>
 
 const int NUMBER_OF_ROWS = 5000, NUMBER_OF_COLUMNS = 5100;
 const int QUIT_TEST = 0, RANDOM_NUMBER_GENERATION = 1, WEIGHTED_POINT_SELECTION = 2, OUTER_PRODUCT = 3, MATRIX_VECTOR_PRODUCT = 4;
@@ -72,11 +76,61 @@ void weightedPointSelectionSerial(int rows, int columns) {
 	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
 	std::cout << "Weighted Points Selection - Serial took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 
-
 }
 
 void weightedPointSelectionParallel(int rows, int columns) {
 
+	std::cout << "Weighted Points Selection - Parallel" << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	ParallelMatrix integerWeights(rows, columns);
+	//integerWeights.showMatrix();
+	ParallelBooleanMatrix eligiblePoints(rows, columns);
+	//eligiblePoints.showMatrix();
+
+	//Assume that 50% of the integer weights are selected
+	std::vector<WeightedPoint> weightedPoints(rows * columns / 50);
+
+	//Fill the vector with weighted points
+	for (int rowCounter = 0; rowCounter < rows; ++rowCounter) {
+		for (int columnCounter = 0; columnCounter < columns; ++columnCounter) {
+			if (eligiblePoints.getElementAt(rowCounter, columnCounter)) {
+				weightedPoints.push_back({ integerWeights.getElementAt(rowCounter, columnCounter), rowCounter, columnCounter });
+			}
+		}
+	}
+
+	//Parallel sort the weighted points by increasing weight
+	SortableCollection weightedPointsCollection(weightedPoints);
+	weightedPointsCollection.doParallelSort();
+
+	//Randomly determine number of points to select
+	int pointsToSelect = weightedPoints.size() * std::rand() / RAND_MAX;
+	int offsetForPoints = weightedPoints.size() / pointsToSelect;
+
+	//Do serial operration if less than 500 points
+	std::unique_ptr<WeightedPoint[]> outputVector = std::unique_ptr<WeightedPoint[]>(new WeightedPoint[pointsToSelect]);
+	if (pointsToSelect < 500) {
+		//Vector to store output
+		for (unsigned int currentOffset = 0, indexCounter = 0; currentOffset < weightedPoints.size(); currentOffset += offsetForPoints, ++indexCounter) {
+			outputVector[indexCounter] = weightedPointsCollection.getData().at(currentOffset);
+		}
+	}
+	else {
+
+		tbb::parallel_for(
+			tbb::blocked_range<int>(0, pointsToSelect),
+			[=, &outputVector, &weightedPoints](tbb::blocked_range<int> range) {
+			for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+				outputVector[indexCounter] = weightedPoints[offsetForPoints * indexCounter];
+			}
+		}
+		);
+
+	}
+
+	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+	std::cout << "Weighted Points Selection - Serial took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 
 }
 

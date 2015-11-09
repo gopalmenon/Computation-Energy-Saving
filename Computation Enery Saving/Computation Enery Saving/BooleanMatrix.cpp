@@ -5,6 +5,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <tbb\blocked_range.h>
+#include <tbb\parallel_for.h>
+
 //Define matrix base class constructor
 BooleanMatrix::BooleanMatrix(int rows, int columns) {
 
@@ -77,7 +80,13 @@ ParallelBooleanMatrix::ParallelBooleanMatrix(int rows, int columns) : BooleanMat
 //Initialize matrix elements in parallel
 void ParallelBooleanMatrix::initializeMatrix() {
 
-
-
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
+		[=](tbb::blocked_range<int> range) {
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomBoolean();
+		}
+	}
+	);
 
 }
