@@ -9,10 +9,13 @@ const auto MODULUS = 4294967296;//=2^32
 const auto MULTIPLIER = 1664525;
 const auto INCREMENT = 1013904223;
 
-//Next randowm number generator based on linear congruential generator
+//Next random number generator based on linear congruential generator
 _int64 getNextRandomNumber(_int64 currentNumber);
 
-//Next randowm boolean generator 
+//Next random boolean generator 
 bool getNextRandomBoolean();
+
+//Next random real number generator 
+double getNextRandomReal(_int64 currentNumber);
 
 #endif

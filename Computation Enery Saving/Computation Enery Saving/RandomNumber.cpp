@@ -13,3 +13,9 @@ bool getNextRandomBoolean() {
 	return (std::rand()) % 2 == 0;
 
 }
+
+double getNextRandomReal(_int64 currentNumber) {
+
+	return (MULTIPLIER * currentNumber + INCREMENT) % MODULUS / MODULUS;
+
+}

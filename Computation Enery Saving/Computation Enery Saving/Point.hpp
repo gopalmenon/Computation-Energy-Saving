@@ -1,6 +1,8 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <string>
+
 class Point {
 
 private:
@@ -17,6 +19,8 @@ public:
 	double distanceFrom(Point otherPoint);
 
 	void setCoordinates(_int64 xCoordinate, _int64 yCoordinate);
+
+	std::string to_string();
 
 };
 

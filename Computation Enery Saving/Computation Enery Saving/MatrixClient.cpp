@@ -1,17 +1,21 @@
 #include "BooleanMatrix.hpp"
 #include "Matrix.hpp"
 #include "ParallelSort.hpp"
+#include "PointMatrix.hpp"
 #include "RandomNumber.hpp"
+#include "RealMatrix.hpp"
 #include "WeightedPoint.hpp"
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 
 #include <tbb\blocked_range.h>
 #include <tbb\parallel_for.h>
+#include <tbb\parallel_reduce.h>
 
-const int NUMBER_OF_ROWS = 5000, NUMBER_OF_COLUMNS = 5100;
+const int NUMBER_OF_ROWS = 1000, NUMBER_OF_COLUMNS = 1100;
 const int QUIT_TEST = 0, RANDOM_NUMBER_GENERATION = 1, WEIGHTED_POINT_SELECTION = 2, OUTER_PRODUCT = 3, MATRIX_VECTOR_PRODUCT = 4;
 std::chrono::milliseconds runTime1InMilliseconds, runTime2InMilliseconds;
 
@@ -19,7 +23,7 @@ void randomNumberGenerationSerial() {
 
 	std::cout << "Serial Matrix" << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
-	SerialMatrix serialMatrix(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS);
+	SerialMatrix serialMatrix(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, true);
 	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
 	std::cout << "Serial Matrix initialization took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 	//serialMatrix.showMatrix();
@@ -30,7 +34,7 @@ void randomNumberGenerationParallel() {
 
 	std::cout << "Parallel Matrix" << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
-	ParallelMatrix parallelMatrix(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS);
+	ParallelMatrix parallelMatrix(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, true);
 	runTime2InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
 	std::cout << "Parallel Matrix initialization took " << runTime2InMilliseconds.count() << " ms." << std::endl;
 	std::cout << "Speedup was " << runTime1InMilliseconds.count() * 1.0 / runTime2InMilliseconds.count() << std::endl;
@@ -43,7 +47,7 @@ void weightedPointSelectionSerial(int rows, int columns) {
 	std::cout << "Weighted Points Selection - Serial" << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
 
-	SerialMatrix integerWeights(rows, columns);
+	SerialMatrix integerWeights(rows, columns, true);
 	//integerWeights.showMatrix();
 	SerialBooleanMatrix eligiblePoints(rows, columns);
 	//eligiblePoints.showMatrix();
@@ -83,7 +87,7 @@ void weightedPointSelectionParallel(int rows, int columns) {
 	std::cout << "Weighted Points Selection - Parallel" << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
 
-	ParallelMatrix integerWeights(rows, columns);
+	ParallelMatrix integerWeights(rows, columns, true);
 	//integerWeights.showMatrix();
 	ParallelBooleanMatrix eligiblePoints(rows, columns);
 	//eligiblePoints.showMatrix();
@@ -102,7 +106,7 @@ void weightedPointSelectionParallel(int rows, int columns) {
 
 	//Parallel sort the weighted points by increasing weight
 	SortableCollection weightedPointsCollection(weightedPoints);
-	weightedPointsCollection.doParallelSort();
+	weightedPointsCollection.doSerialSort();
 
 	//Randomly determine number of points to select
 	int pointsToSelect = weightedPoints.size() * std::rand() / RAND_MAX;
@@ -130,15 +134,120 @@ void weightedPointSelectionParallel(int rows, int columns) {
 	}
 
 	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-	std::cout << "Weighted Points Selection - Serial took " << runTime1InMilliseconds.count() << " ms." << std::endl;
+	std::cout << "Weighted Points Selection - Parallel took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 
 }
 
 void outerProductSerial() {
 
+	std::cout << "Outer Product - Serial" << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	SerialPointMatrix pointVector(NUMBER_OF_ROWS, 1);
+
+	//Fill interpoint distances off the diagonal
+	SerialRealMatrix interPointDistances(NUMBER_OF_ROWS, NUMBER_OF_ROWS, false);
+	double maximumDistance = 0.0, currentDistance;
+	for (int rowCounter = 0; rowCounter < NUMBER_OF_ROWS; ++rowCounter) {
+		for (int columnCounter = 0; columnCounter < NUMBER_OF_ROWS; ++columnCounter) {
+			if (rowCounter != columnCounter) {
+				currentDistance = pointVector.getElementAt(rowCounter, 0).distanceFrom(pointVector.getElementAt(columnCounter, 0));
+				interPointDistances.setElementAt(rowCounter, columnCounter, currentDistance);
+				if (currentDistance > maximumDistance) {
+					maximumDistance = currentDistance;
+				}
+			}
+		}
+	}
+
+	//Fill in diagonal values
+	maximumDistance *= NUMBER_OF_ROWS;
+	for (int rowCounter = 0; rowCounter < NUMBER_OF_ROWS; ++rowCounter) {
+		interPointDistances.setElementAt(rowCounter, rowCounter, maximumDistance);
+	}
+
+	//Origin to point distances
+	SerialRealMatrix originToPointDistances(NUMBER_OF_ROWS, 1, false);
+	for (int rowCounter = 0; rowCounter < NUMBER_OF_ROWS; ++rowCounter) {
+		originToPointDistances.setElementAt(rowCounter, 0, pointVector.getElementAt(rowCounter, 0).distanceFrom(Point(0, 0)));
+	}
+
+	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+	std::cout << "Outer Product - Serial took " << runTime1InMilliseconds.count() << " ms." << std::endl;
+
 }
 
 void outerProductParallel() {
+
+	std::cout << "Outer Product - Parallel" << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	SerialPointMatrix pointVector(NUMBER_OF_ROWS, 1);
+
+	//Fill interpoint distances off the diagonal
+	SerialRealMatrix interPointDistances(NUMBER_OF_ROWS, NUMBER_OF_ROWS, false);
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, NUMBER_OF_ROWS * NUMBER_OF_ROWS),
+		[=, &interPointDistances, &pointVector](tbb::blocked_range<int> range) {
+		int row, column;
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			row = indexCounter / NUMBER_OF_ROWS;
+			column = indexCounter % NUMBER_OF_ROWS;
+			if (row != column) {
+				interPointDistances.setElementAt(row, column, pointVector.getElementAt(row, 0).distanceFrom(pointVector.getElementAt(column, 0)));
+			}
+		}
+	}
+	);
+
+	//Find the maximum off diagonal value
+	double maximumDistance = 
+		tbb::parallel_reduce(
+			tbb::blocked_range<int>(0, NUMBER_OF_ROWS * NUMBER_OF_ROWS),
+			double(0),
+			[=, &interPointDistances](const tbb::blocked_range<int> range, double maximumDistance)-> double {
+					int row, column;
+					double candidateDistance;
+					for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+						row = indexCounter / NUMBER_OF_ROWS;
+						column = indexCounter % NUMBER_OF_ROWS;
+						candidateDistance = interPointDistances.getElementAt(row, column);
+						if (candidateDistance > maximumDistance) {
+							maximumDistance = candidateDistance;
+						}
+					}
+					return maximumDistance;
+				},
+			[=](double distance1, double distance2)->double {
+				return std::max(distance1, distance2);
+			}
+		);
+
+
+	//Fill in diagonal values
+	maximumDistance *= NUMBER_OF_ROWS;
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, NUMBER_OF_ROWS),
+		[=, &interPointDistances](tbb::blocked_range<int> range) {
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			interPointDistances.setElementAt(indexCounter, indexCounter, maximumDistance);
+		}
+	}
+	);
+
+	//Origin to point distances
+	SerialRealMatrix originToPointDistances(NUMBER_OF_ROWS, 1, false);
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, NUMBER_OF_ROWS),
+		[=, &originToPointDistances, &pointVector](tbb::blocked_range<int> range) {
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			originToPointDistances.setElementAt(indexCounter, 0, pointVector.getElementAt(indexCounter, 0).distanceFrom(Point(0, 0)));
+		}
+	}
+	);
+
+	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+	std::cout << "Outer Product - Parallel took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 
 }
 

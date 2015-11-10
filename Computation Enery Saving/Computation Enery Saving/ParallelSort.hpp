@@ -36,4 +36,6 @@ public:
 	//Do a parallel QuickSort on the input data and return the sorted result
 	void doParallelSort();
 
+	//Do a SERIAL QuickSort on the input data and return the sorted result
+	void doSerialSort();
 };

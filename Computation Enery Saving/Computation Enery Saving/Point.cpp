@@ -22,3 +22,8 @@ void Point::setCoordinates(_int64 xCoordinate, _int64 yCoordinate) {
 	this->xCoordinate = xCoordinate;
 	this->yCoordinate = yCoordinate;
 }
+
+std::string Point::to_string() {
+	std::string returnValue("(");
+	return returnValue.append(std::to_string(this->xCoordinate)).append(", ").append(std::to_string(this->yCoordinate)).append(")");
+}

@@ -1,17 +1,17 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef REAL_MATRIX_H
+#define REAL_MATRIX_H
 
 #include <memory>
 #include <vector>
 
-typedef std::unique_ptr<_int64[]> matrixRow;
+typedef std::unique_ptr<double[]> realMatrixRow;
 
 //Base class to hold a matrix with accessor method for elements
-class Matrix {
+class RealMatrix {
 
 protected:
-	
-	std::unique_ptr<matrixRow[]> matrixRows;
+
+	std::unique_ptr<realMatrixRow[]> matrixRows;
 	int numberOfRows;
 	int numberOfColumns;
 
@@ -19,22 +19,22 @@ protected:
 
 public:
 
-	Matrix(int rows, int columns);
+	RealMatrix(int rows, int columns);
 
-	_int64 getElementAt(int row, int column);
+	double getElementAt(int row, int column);
 
-	void setElementAt(int row, int column, _int64);
+	void setElementAt(int row, int column, double);
 
 	void showMatrix();
 };
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
 //The randon population is done serially.
-class SerialMatrix : public Matrix {
+class SerialRealMatrix : public RealMatrix {
 
 public:
 
-	SerialMatrix(int rows, int columns, bool initialize);
+	SerialRealMatrix(int rows, int columns, bool initialize);
 
 private:
 
@@ -44,11 +44,11 @@ private:
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
 //The randon population is done in parallel.
-class ParallelMatrix : public Matrix {
+class ParallelRealMatrix : public RealMatrix {
 
 public:
 
-	ParallelMatrix(int rows, int columns, bool initialize);
+	ParallelRealMatrix(int rows, int columns, bool initialize);
 
 private:
 

@@ -112,3 +112,14 @@ void SortableCollection::doParallelSort() {
 	//Do the sorting in parallel
 	parallelQuickSort(firstElement, lastElement);
 }
+
+void SortableCollection::doSerialSort() {
+
+	//Get internal array representation of the vector to be sorted
+	int numberOfElements = this->inputData.size();
+	WeightedPoint* elements = this->inputData.data();
+	WeightedPoint* firstElement = &elements[0];
+	WeightedPoint* lastElement = &elements[numberOfElements - 1];
+	std::sort(firstElement, lastElement + 1, compareWeightedPoints);
+
+}

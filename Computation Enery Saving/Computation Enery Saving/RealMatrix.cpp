@@ -1,4 +1,4 @@
-#include "Matrix.hpp"
+#include "RealMatrix.hpp"
 #include "RandomNumber.hpp"
 
 #include <iostream>
@@ -8,7 +8,7 @@
 #include <tbb\parallel_for.h>
 
 //Define matrix base class constructor
-Matrix::Matrix(int rows, int columns) {
+RealMatrix::RealMatrix(int rows, int columns) {
 
 	if (rows <= 0 || columns <= 0) {
 		throw std::invalid_argument("Rows and columns must be non-zero and positive");
@@ -16,14 +16,14 @@ Matrix::Matrix(int rows, int columns) {
 
 	this->numberOfRows = rows;
 	this->numberOfColumns = columns;
-	this->matrixRows = std::unique_ptr<matrixRow[]>(new matrixRow[rows]);
+	this->matrixRows = std::unique_ptr<realMatrixRow[]>(new realMatrixRow[rows]);
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
-		this->matrixRows[rowCounter] = matrixRow(new _int64[columns]);
+		this->matrixRows[rowCounter] = realMatrixRow(new double[columns]);
 	}
 }
 
 //Element accessor
-_int64 Matrix::getElementAt(int row, int column) {
+double RealMatrix::getElementAt(int row, int column) {
 
 	if (row > this->numberOfRows - 1 || column > this->numberOfColumns - 1) {
 		throw std::invalid_argument("Row or column is outside valid range");
@@ -34,7 +34,7 @@ _int64 Matrix::getElementAt(int row, int column) {
 }
 
 //Element mutator
-void Matrix::setElementAt(int row, int column, _int64 elementValue) {
+void RealMatrix::setElementAt(int row, int column, double elementValue) {
 
 	if (row > this->numberOfRows - 1 || column > this->numberOfColumns - 1) {
 		throw std::invalid_argument("Row or column is outside valid range");
@@ -45,7 +45,7 @@ void Matrix::setElementAt(int row, int column, _int64 elementValue) {
 }
 
 //Matrix viewer
-void Matrix::showMatrix() {
+void RealMatrix::showMatrix() {
 
 	bool firstRowElement;
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
@@ -66,40 +66,38 @@ void Matrix::showMatrix() {
 }
 
 //Serial matrix constructor
-SerialMatrix::SerialMatrix(int rows, int columns, bool initialize) : Matrix(rows, columns) {
+SerialRealMatrix::SerialRealMatrix(int rows, int columns, bool initialize) : RealMatrix(rows, columns) {
 	if (initialize) {
 		initializeMatrix();
 	}
 }
 
 //Initialize matrix elements in order
-void SerialMatrix::initializeMatrix() {
+void SerialRealMatrix::initializeMatrix() {
 
-	_int64 seedValue = 1;
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
 		for (int columnCounter = 0; columnCounter < this->numberOfColumns; ++columnCounter) {
-			seedValue = getNextRandomNumber(seedValue);
-			this->matrixRows[rowCounter][columnCounter] = seedValue;
+			this->matrixRows[rowCounter][columnCounter] = getNextRandomReal(columnCounter);
 		}
 	}
 
 }
 
 //Parallel matrix constructor
-ParallelMatrix::ParallelMatrix(int rows, int columns, bool initialize) : Matrix(rows, columns) {
+ParallelRealMatrix::ParallelRealMatrix(int rows, int columns, bool initialize) : RealMatrix(rows, columns) {
 	if (initialize) {
 		initializeMatrix();
 	}
 }
 
 //Initialize matrix elements in parallel
-void ParallelMatrix::initializeMatrix() {
+void ParallelRealMatrix::initializeMatrix() {
 
 	tbb::parallel_for(
 		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
 		[=](tbb::blocked_range<int> range) {
 		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
-			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomNumber(indexCounter);
+			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomReal(indexCounter);
 		}
 	}
 	);

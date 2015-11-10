@@ -1,6 +1,8 @@
-#include "Matrix.hpp"
+#include "Point.hpp"
+#include "PointMatrix.hpp"
 #include "RandomNumber.hpp"
 
+#include <ctime>
 #include <iostream>
 #include <stdexcept>
 
@@ -8,7 +10,7 @@
 #include <tbb\parallel_for.h>
 
 //Define matrix base class constructor
-Matrix::Matrix(int rows, int columns) {
+PointMatrix::PointMatrix(int rows, int columns) {
 
 	if (rows <= 0 || columns <= 0) {
 		throw std::invalid_argument("Rows and columns must be non-zero and positive");
@@ -16,14 +18,14 @@ Matrix::Matrix(int rows, int columns) {
 
 	this->numberOfRows = rows;
 	this->numberOfColumns = columns;
-	this->matrixRows = std::unique_ptr<matrixRow[]>(new matrixRow[rows]);
+	this->matrixRows = std::unique_ptr<matrixPointRow[]>(new matrixPointRow[rows]);
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
-		this->matrixRows[rowCounter] = matrixRow(new _int64[columns]);
+		this->matrixRows[rowCounter] = matrixPointRow(new Point[columns]);
 	}
 }
 
 //Element accessor
-_int64 Matrix::getElementAt(int row, int column) {
+Point PointMatrix::getElementAt(int row, int column) {
 
 	if (row > this->numberOfRows - 1 || column > this->numberOfColumns - 1) {
 		throw std::invalid_argument("Row or column is outside valid range");
@@ -34,18 +36,18 @@ _int64 Matrix::getElementAt(int row, int column) {
 }
 
 //Element mutator
-void Matrix::setElementAt(int row, int column, _int64 elementValue) {
+void PointMatrix::setElementAt(int row, int column, Point point) {
 
 	if (row > this->numberOfRows - 1 || column > this->numberOfColumns - 1) {
 		throw std::invalid_argument("Row or column is outside valid range");
 	}
 
-	this->matrixRows[row][column] = elementValue;
+	this->matrixRows[row][column] = point;
 
 }
 
 //Matrix viewer
-void Matrix::showMatrix() {
+void PointMatrix::showMatrix() {
 
 	bool firstRowElement;
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
@@ -58,51 +60,44 @@ void Matrix::showMatrix() {
 			else {
 				std::cout << ", ";
 			}
-			std::cout << getElementAt(rowCounter, columnCounter);
+			std::cout << getElementAt(rowCounter, columnCounter).to_string();
 		}
 		std::cout << "]" << std::endl;
 	}
-
 }
 
 //Serial matrix constructor
-SerialMatrix::SerialMatrix(int rows, int columns, bool initialize) : Matrix(rows, columns) {
-	if (initialize) {
-		initializeMatrix();
-	}
+SerialPointMatrix::SerialPointMatrix(int rows, int columns) : PointMatrix(rows, columns) {
+	initializeMatrix();
 }
 
 //Initialize matrix elements in order
-void SerialMatrix::initializeMatrix() {
+void SerialPointMatrix::initializeMatrix() {
 
-	_int64 seedValue = 1;
+	std::srand(std::time(0));
 	for (int rowCounter = 0; rowCounter < this->numberOfRows; ++rowCounter) {
 		for (int columnCounter = 0; columnCounter < this->numberOfColumns; ++columnCounter) {
-			seedValue = getNextRandomNumber(seedValue);
-			this->matrixRows[rowCounter][columnCounter] = seedValue;
+			this->matrixRows[rowCounter][columnCounter] = Point(rand(), rand());
 		}
 	}
 
 }
 
 //Parallel matrix constructor
-ParallelMatrix::ParallelMatrix(int rows, int columns, bool initialize) : Matrix(rows, columns) {
-	if (initialize) {
-		initializeMatrix();
-	}
+ParallelPointMatrix::ParallelPointMatrix(int rows, int columns) : PointMatrix(rows, columns) {
+	initializeMatrix();
 }
 
 //Initialize matrix elements in parallel
-void ParallelMatrix::initializeMatrix() {
+void ParallelPointMatrix::initializeMatrix() {
 
 	tbb::parallel_for(
 		tbb::blocked_range<int>(0, this->numberOfRows * this->numberOfColumns),
 		[=](tbb::blocked_range<int> range) {
 		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
-			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = getNextRandomNumber(indexCounter);
+			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = Point(rand(), rand());
 		}
 	}
 	);
 
 }
-
