@@ -15,7 +15,7 @@
 #include <tbb\parallel_for.h>
 #include <tbb\parallel_reduce.h>
 
-const int NUMBER_OF_ROWS = 1000, NUMBER_OF_COLUMNS = 1100;
+const int NUMBER_OF_ROWS = 10000, NUMBER_OF_COLUMNS = 11000;
 const int QUIT_TEST = 0, RANDOM_NUMBER_GENERATION = 1, WEIGHTED_POINT_SELECTION = 2, OUTER_PRODUCT = 3, MATRIX_VECTOR_PRODUCT = 4;
 std::chrono::milliseconds runTime1InMilliseconds, runTime2InMilliseconds;
 
@@ -253,9 +253,29 @@ void outerProductParallel() {
 
 void matrixVectorProductSerial() {
 
+	std::cout << "Matrix Product - Serial" << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();	
+	
+	SerialRealMatrix multiplicand(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, true);
+	SerialRealMatrix multiplierVector(NUMBER_OF_COLUMNS, 1, true);
+	multiplicand.multiply(multiplierVector);
+
+	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+	std::cout << "Matrix Product - Serial took " << runTime1InMilliseconds.count() << " ms." << std::endl;
+
 }
 
 void matrixVectorProductParallel() {
+
+	std::cout << "Matrix Product - Parallel" << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	ParallelRealMatrix multiplicand(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, true);
+	ParallelRealMatrix multiplierVector(NUMBER_OF_COLUMNS, 1, true);
+	multiplicand.multiply(multiplierVector);
+
+	runTime1InMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+	std::cout << "Matrix Product - Parallel took " << runTime1InMilliseconds.count() << " ms." << std::endl;
 
 }
 
