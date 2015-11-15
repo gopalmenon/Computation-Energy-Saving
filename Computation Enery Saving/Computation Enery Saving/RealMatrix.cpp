@@ -65,6 +65,28 @@ void RealMatrix::showMatrix() {
 
 }
 
+//Get the number of rows
+int RealMatrix::getNumberOfRows() {
+	return this->numberOfRows;
+}
+
+//Get the number of columns
+int RealMatrix::getNumberOfColumns() {
+	return this->numberOfColumns;
+}
+
+//Check if the multiplier is valid 
+bool RealMatrix::isValidMultiplier(RealMatrix& multiplier) {
+
+	if (this->numberOfColumns == multiplier.getNumberOfRows()) {
+		return true;
+	}
+	else {
+		return false;
+	}
+
+}
+
 //Serial matrix constructor
 SerialRealMatrix::SerialRealMatrix(int rows, int columns, bool initialize) : RealMatrix(rows, columns) {
 	if (initialize) {
@@ -84,8 +106,30 @@ void SerialRealMatrix::initializeMatrix() {
 }
 
 //Multiply with another matrix
-void SerialRealMatrix::multiply(SerialRealMatrix& multiplicand) {
+RealMatrix& SerialRealMatrix::multiply(RealMatrix& multiplier) {
 
+	//Check if the multiplier is valid
+	if (!isValidMultiplier(multiplier)) {
+		throw std::invalid_argument("Invalid multiplier size");
+	}
+
+	int returnNumberOfRows = this->numberOfRows, returnNumberOfColumns = multiplier.getNumberOfColumns();
+	SerialRealMatrix returnValue(returnNumberOfRows, returnNumberOfColumns, false);
+
+	//Fill the return matrix
+	int components = this->numberOfColumns;
+	double elementValue;
+	for (int rowCounter = 0; rowCounter < returnNumberOfRows; ++rowCounter) {
+		for (int columnCounter = 0; columnCounter < returnNumberOfColumns; ++columnCounter) {
+			elementValue = 0.0;
+			for (int componentCounter = 0; componentCounter < components; ++componentCounter) {
+				elementValue += this->getElementAt(rowCounter, componentCounter) * multiplier.getElementAt(componentCounter, columnCounter);
+			}
+			returnValue.setElementAt(rowCounter, columnCounter, elementValue);
+		}
+	}
+
+	return returnValue;
 }
 
 //Parallel matrix constructor
@@ -110,7 +154,34 @@ void ParallelRealMatrix::initializeMatrix() {
 }
 
 //Multiply with another matrix
-void ParallelRealMatrix::multiply(SerialRealMatrix& multiplicand) {
+RealMatrix& ParallelRealMatrix::multiply(RealMatrix& multiplier) {
 
+	//Check if the multiplier is valid
+	if (!isValidMultiplier(multiplier)) {
+		throw std::invalid_argument("Invalid multiplier size");
+	}
+
+	int returnNumberOfRows = this->numberOfRows, returnNumberOfColumns = multiplier.getNumberOfColumns();
+	ParallelRealMatrix returnValue(returnNumberOfRows, returnNumberOfColumns, false);
+
+	int components = this->numberOfColumns;
+
+	//Fill the return matrix
+	tbb::parallel_for(
+		tbb::blocked_range<int>(0, returnNumberOfRows * returnNumberOfColumns),
+		[=, &multiplier](tbb::blocked_range<int> range) {
+		for (int indexCounter = range.begin(); indexCounter != range.end(); ++indexCounter) {
+			double elementValue = 0.0;
+			int elementRow = indexCounter / returnNumberOfColumns, elementColumn = indexCounter % returnNumberOfColumns;
+
+			for (int componentCounter = 0; componentCounter < components; ++componentCounter) {
+				elementValue += this->getElementAt(elementRow, componentCounter) * multiplier.getElementAt(componentCounter, elementColumn);
+			}
+
+			this->matrixRows[indexCounter / (this->numberOfColumns)][indexCounter % (this->numberOfColumns)] = elementValue;
+		}
+	}
+	);
+
+	return returnValue;
 }
-

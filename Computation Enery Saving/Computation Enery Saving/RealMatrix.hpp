@@ -15,6 +15,7 @@ protected:
 	int numberOfRows;
 	int numberOfColumns;
 
+	bool isValidMultiplier(RealMatrix& multiplier);
 	virtual void initializeMatrix() = 0;
 
 public:
@@ -27,7 +28,12 @@ public:
 
 	void showMatrix();
 
-	virtual void multiply(RealMatrix& multiplicand) = 0;
+	virtual RealMatrix& multiply(RealMatrix& multiplier) = 0;
+
+	int getNumberOfRows();
+
+	int getNumberOfColumns();
+
 };
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
@@ -37,7 +43,7 @@ class SerialRealMatrix : public RealMatrix {
 public:
 
 	SerialRealMatrix(int rows, int columns, bool initialize);
-	void multiply(SerialRealMatrix& multiplicand);
+	RealMatrix& multiply(RealMatrix& multiplier);
 
 private:
 
@@ -52,7 +58,7 @@ class ParallelRealMatrix : public RealMatrix {
 public:
 
 	ParallelRealMatrix(int rows, int columns, bool initialize);
-	void multiply(ParallelRealMatrix& multiplicand);
+	RealMatrix& multiply(RealMatrix& multiplier);
 
 private:
 
