@@ -26,6 +26,8 @@ public:
 	void setElementAt(int row, int column, double);
 
 	void showMatrix();
+
+	virtual void multiply(RealMatrix& multiplicand) = 0;
 };
 
 //Class that holds a matrix that has elements populated by random values at initialization. 
@@ -35,6 +37,7 @@ class SerialRealMatrix : public RealMatrix {
 public:
 
 	SerialRealMatrix(int rows, int columns, bool initialize);
+	void multiply(SerialRealMatrix& multiplicand);
 
 private:
 
@@ -49,6 +52,7 @@ class ParallelRealMatrix : public RealMatrix {
 public:
 
 	ParallelRealMatrix(int rows, int columns, bool initialize);
+	void multiply(ParallelRealMatrix& multiplicand);
 
 private:
 

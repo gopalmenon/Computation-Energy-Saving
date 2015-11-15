@@ -83,6 +83,11 @@ void SerialRealMatrix::initializeMatrix() {
 
 }
 
+//Multiply with another matrix
+void SerialRealMatrix::multiply(SerialRealMatrix& multiplicand) {
+
+}
+
 //Parallel matrix constructor
 ParallelRealMatrix::ParallelRealMatrix(int rows, int columns, bool initialize) : RealMatrix(rows, columns) {
 	if (initialize) {
@@ -101,6 +106,11 @@ void ParallelRealMatrix::initializeMatrix() {
 		}
 	}
 	);
+
+}
+
+//Multiply with another matrix
+void ParallelRealMatrix::multiply(SerialRealMatrix& multiplicand) {
 
 }
 
